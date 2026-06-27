@@ -29,7 +29,9 @@ const type: 'movie' | 'tv' | 'anime' =
       
       {/* --- NAVBAR & LOGO --- */}
       <header className="sticky top-0 z-50 bg-[#070b14]/80 backdrop-blur-md border-b border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-4">
+        <Link href="/explore" className="text-xs sm:text-sm font-bold text-sky-400 hover:text-white px-3 py-1 bg-sky-950/50 rounded-lg border border-sky-800/60">
+  🔍 Advanced Search
+</Link><div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-4">
           {/* Logo MovieKuy Premium MK Monogram */}
 <Link href="/" className="flex items-center gap-2.5 group shrink-0 select-none">
   

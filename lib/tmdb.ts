@@ -97,3 +97,33 @@ export async function getSimilarMovies(id: string) {
   const data = await res.json();
   return data.results ? data.results.slice(0, 10) : [];
 }
+
+// --- TARUH DI PALING BAWAH FILE lib/tmdb.ts ---
+
+// 6. AMBIL DAFTAR GENRE
+export async function getGenres(type: 'movie' | 'tv' = 'movie') {
+  const BASE_URL = process.env.NEXT_PUBLIC_TMDB_BASE_URL || 'https://api.themoviedb.org/3';
+  const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+  
+  const res = await fetch(`${BASE_URL}/genre/${type}/list?api_key=${API_KEY}&language=id-ID`, { next: { revalidate: 86400 } });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.genres || [];
+}
+
+// 7. MESIN ADVANCED DISCOVER (Filter Genre + Tahun + Sort)
+export async function getDiscover(params: { type?: string; genre?: string; year?: string; sort?: string; page?: number }) {
+  const BASE_URL = process.env.NEXT_PUBLIC_TMDB_BASE_URL || 'https://api.themoviedb.org/3';
+  const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+  
+  const { type = 'movie', genre, year, sort = 'popularity.desc', page = 1 } = params;
+  const q = new URLSearchParams({ api_key: API_KEY || '', language: 'id-ID', page: page.toString(), sort_by: sort });
+  
+  if (genre && genre !== '') q.append('with_genres', genre);
+  if (year && year !== '') q.append(type === 'movie' ? 'primary_release_year' : 'first_air_date_year', year);
+
+  const res = await fetch(`${BASE_URL}/discover/${type}?${q.toString()}`, { next: { revalidate: 3600 } });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.results || [];
+}
