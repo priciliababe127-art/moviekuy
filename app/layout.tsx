@@ -28,9 +28,9 @@ export const metadata: Metadata = {
   // KUNCI RAHASIA MENAKLUKKAN YANDEX & BING:
   verification: {
     google: 'google-site-verification=rTcCJIPqveKEsPeeWUkh8_Zu5KgoUD9GcB41ye4SCPs',
-    yandex: 'masukkan-kode-verifikasi-yandex-webmaster-nanti',
+    yandex: 'yandex_db4359a85376f0ff.html ',
     other: {
-      'msvalidate.01': 'masukkan-kode-verifikasi-bing-webmaster-nanti', 
+      'msvalidate.01': '2E3D18A52B2829C1CEF8C8C255EF24CE', 
     },
   },
 };
