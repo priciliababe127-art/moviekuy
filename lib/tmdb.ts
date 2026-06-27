@@ -1,7 +1,7 @@
 // lib/tmdb.ts
 
 const BASE_URL = process.env.NEXT_PUBLIC_TMDB_BASE_URL || 'https://api.themoviedb.org/3';
-const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || 'af84930b5f98fcbebe460f39dc580bef';
+const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
 export interface MediaItem {
   id: number;
@@ -19,18 +19,19 @@ interface FetchParams {
   year?: string;
   country?: string;
   type?: 'movie' | 'tv' | 'anime';
+  page?: number;
 }
 
-// 1. MESIN UTAMA BERANDA (HYBRID TMDB & MYANIMELIST)
+// 1. MESIN UTAMA BERANDA (SUPPORT PAGINASI & RILISAN BARU)
 export async function getMedia(params: FetchParams = {}): Promise<MediaItem[]> {
-  const { query, category = 'popular', year, country, type = 'movie' } = params;
+  const { query, category, year, country, type = 'movie', page = 1 } = params;
 
-  // [JALUR KHUSUS ANIME - VIA JIKAN API / MYANIMELIST]
+  // [JALUR KHUSUS ANIME]
   if (type === 'anime') {
-    let jikanUrl = `https://api.jikan.moe/v4/top/anime?filter=bypopularity&page=1`;
+    let jikanUrl = `https://api.jikan.moe/v4/top/anime?filter=bypopularity&page=${page}`;
     
     if (query && query.trim() !== '') {
-      jikanUrl = `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&sfw=true`;
+      jikanUrl = `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&sfw=true&page=${page}`;
     }
 
     const res = await fetch(jikanUrl, { next: { revalidate: 3600 } });
@@ -47,16 +48,17 @@ export async function getMedia(params: FetchParams = {}): Promise<MediaItem[]> {
     }));
   }
 
-  // [JALUR STANDAR MOVIE & TV - VIA TMDB]
-  let apiCategory = category;
-  if (type === 'tv' && category === 'now_playing') apiCategory = 'on_the_air';
+  // [JALUR STANDAR MOVIE & TV]
+  const defaultCategory = type === 'movie' ? 'now_playing' : 'popular';
+  let apiCategory = category || defaultCategory;
+  if (type === 'tv' && apiCategory === 'now_playing') apiCategory = 'on_the_air';
 
-  let url = `${BASE_URL}/${type}/${apiCategory}?api_key=${API_KEY}&language=id-ID&page=1`;
+  let url = `${BASE_URL}/${type}/${apiCategory}?api_key=${API_KEY}&language=id-ID&page=${page}`;
 
   if (query && query.trim() !== '') {
-    url = `${BASE_URL}/search/${type}?api_key=${API_KEY}&language=id-ID&query=${encodeURIComponent(query)}&page=1`;
+    url = `${BASE_URL}/search/${type}?api_key=${API_KEY}&language=id-ID&query=${encodeURIComponent(query)}&page=${page}`;
   } else if (year || country) {
-    const q = new URLSearchParams({ api_key: API_KEY || '', language: 'id-ID', page: '1' });
+    const q = new URLSearchParams({ api_key: API_KEY || '', language: 'id-ID', page: page.toString() });
     if (year) q.append(type === 'movie' ? 'primary_release_year' : 'first_air_date_year', year);
     if (country) q.append('with_origin_country', country);
     url = `${BASE_URL}/discover/${type}?${q.toString()}`;
@@ -68,21 +70,21 @@ export async function getMedia(params: FetchParams = {}): Promise<MediaItem[]> {
   return data.results || [];
 }
 
-// 2. DETAIL MOVIE
+// 2. AMBIL DETAIL MOVIE
 export async function getMovieDetail(id: string) {
   const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=id-ID`, { next: { revalidate: 3600 } });
   if (!res.ok) return null;
   return res.json();
 }
 
-// 3. DETAIL TV SERIES
+// 3. AMBIL DETAIL TV
 export async function getTVDetail(id: string) {
   const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=id-ID`, { next: { revalidate: 3600 } });
   if (!res.ok) return null;
   return res.json();
 }
 
-// 4. DETAIL ANIME (JIKAN API)
+// 4. AMBIL DETAIL ANIME
 export async function getAnimeDetail(id: string) {
   const res = await fetch(`https://api.jikan.moe/v4/anime/${id}`, { next: { revalidate: 3600 } });
   if (!res.ok) return null;
@@ -90,7 +92,7 @@ export async function getAnimeDetail(id: string) {
   return data.data;
 }
 
-// 5. FILM SERUPA / REKOMENDASI (Untuk Halaman Movie)
+// 5. AMBIL FILM SERUPA (RECOMMENDATION)
 export async function getSimilarMovies(id: string) {
   const res = await fetch(`${BASE_URL}/movie/${id}/similar?api_key=${API_KEY}&language=id-ID&page=1`, { next: { revalidate: 3600 } });
   if (!res.ok) return [];
@@ -98,24 +100,16 @@ export async function getSimilarMovies(id: string) {
   return data.results ? data.results.slice(0, 10) : [];
 }
 
-// --- TARUH DI PALING BAWAH FILE lib/tmdb.ts ---
-
-// 6. AMBIL DAFTAR GENRE
+// 6. AMBIL DAFTAR GENRE (UNTUK HALAMAN EXPLORE)
 export async function getGenres(type: 'movie' | 'tv' = 'movie') {
-  const BASE_URL = process.env.NEXT_PUBLIC_TMDB_BASE_URL || 'https://api.themoviedb.org/3';
-  const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-  
   const res = await fetch(`${BASE_URL}/genre/${type}/list?api_key=${API_KEY}&language=id-ID`, { next: { revalidate: 86400 } });
   if (!res.ok) return [];
   const data = await res.json();
   return data.genres || [];
 }
 
-// 7. MESIN ADVANCED DISCOVER (Filter Genre + Tahun + Sort)
+// 7. MESIN ADVANCED DISCOVER (Filter Genre + Tahun + Sort UNTUK HALAMAN EXPLORE)
 export async function getDiscover(params: { type?: string; genre?: string; year?: string; sort?: string; page?: number }) {
-  const BASE_URL = process.env.NEXT_PUBLIC_TMDB_BASE_URL || 'https://api.themoviedb.org/3';
-  const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-  
   const { type = 'movie', genre, year, sort = 'popularity.desc', page = 1 } = params;
   const q = new URLSearchParams({ api_key: API_KEY || '', language: 'id-ID', page: page.toString(), sort_by: sort });
   
