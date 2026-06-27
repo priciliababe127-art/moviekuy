@@ -1,7 +1,7 @@
 // lib/tmdb.ts
 
-const BASE_URL = process.env.NEXT_PUBLIC_TMDB_BASE_URL;
-const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+const BASE_URL = process.env.NEXT_PUBLIC_TMDB_BASE_URL || 'https://api.themoviedb.org/3';
+const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || 'af84930b5f98fcbebe460f39dc580bef';
 
 export interface MediaItem {
   id: number;
