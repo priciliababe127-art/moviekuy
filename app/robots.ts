@@ -1,15 +1,14 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  // Ganti alamat ini dengan domain aslimu nanti saat live
-  const baseUrl = 'https://moviekuy.sociosquad.net'; 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://moviekuy.sociosquad.net';
 
   return {
     rules: {
-      userAgent: '*',
+      userAgent: '*', // Mengizinkan SEMUA bot mesin pencari (Googlebot, Bingbot, YandexBot, dll)
       allow: '/',
-      disallow: ['/api/', '/_next/'], // Mengunci API kita agar tidak dicuri bot lain
+      disallow: ['/api/'], // Sembunyikan jalur API agar tidak memberatkan server
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${siteUrl}/sitemap.xml`, // Menunjuk lokasi peta jalan ke mesin pencari
   };
 }
