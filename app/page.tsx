@@ -1,17 +1,40 @@
 import { getMedia, MediaItem } from '@/lib/tmdb';
 import Link from 'next/link';
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ type?: string; page?: string; q?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ type?: string; page?: string; q?: string; country?: string }> }) {
   const sp = await searchParams;
   
-  // Baca parameter dari URL, beri fallback nilai default jika kosong
   const typeParam = sp.type;
   const type: 'movie' | 'tv' | 'anime' = (typeParam === 'tv' ? 'tv' : typeParam === 'anime' ? 'anime' : 'movie');
   const currentPage = parseInt(sp.page || '1', 10);
   const searchQuery = sp.q || '';
+  const selectedCountry = sp.country || '';
 
-  // Tarik data berdasarkan filter dan halaman aktif
-  const mediaItems = await getMedia({ type, page: currentPage, query: searchQuery });
+  // Menarik data dengan kombinasi: Tipe + Halaman + Query + Negara
+  const mediaItems = await getMedia({ type, page: currentPage, query: searchQuery, country: selectedCountry });
+
+  // Daftar Negara Paling Populer di Dunia Streaming
+  const countries = [
+    { code: '', label: '🌍 Semua' },
+    { code: 'US', label: '🇺🇸 Barat / US' },
+    { code: 'KR', label: '🇰🇷 Korea' },
+    { code: 'JP', label: '🇯🇵 Jepang' },
+    { code: 'CN', label: '🇨🇳 China' },
+    { code: 'ID', label: '🇮🇩 Indo' },
+    { code: 'TH', label: '🇹🇭 Thailand' },
+  ];
+
+  // Penentu Judul Sub-Header
+  const getSectionTitle = () => {
+    if (searchQuery) return `Hasil Pencarian: "${searchQuery}"`;
+    if (selectedCountry) {
+      const cName = countries.find(c => c.code === selectedCountry)?.label || selectedCountry;
+      return `🔥 Filter Negara: ${cName}`;
+    }
+    if (type === 'movie') return '🔥 Rilisan Bioskop Terbaru (Now Playing)';
+    if (type === 'tv') return '🔥 TV Series Populer';
+    return '⛩️ Top Anime List';
+  };
 
   return (
     <div className="min-h-screen bg-[#070b14] text-white p-4 sm:p-6 md:p-8 max-w-7xl mx-auto pb-24">
@@ -42,6 +65,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
         {/* Search Bar Baris Atas */}
         <form action="/" method="GET" className="w-full sm:w-80 relative">
           <input type="hidden" name="type" value={type} />
+          {selectedCountry && <input type="hidden" name="country" value={selectedCountry} />}
           <input 
             type="text" 
             name="q" 
@@ -52,120 +76,133 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
         </form>
       </header>
 
-      {/* --- BARIS UTAMA FILTER TAB & ADVANCED EXPLORE --- */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        {/* Tab Switcher Konten */}
+      {/* --- KONTROL TAB & ADVANCED SEARCH --- */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div className="flex bg-slate-950/60 p-1 rounded-2xl border border-slate-800 shadow-xl overflow-x-auto no-scrollbar w-fit">
           <Link href={`/?type=movie`} className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 ${type === 'movie' ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎬 Movies</Link>
           <Link href={`/?type=tv`} className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 ${type === 'tv' ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>📺 TV Series</Link>
           <Link href={`/?type=anime`} className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 ${type === 'anime' ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>⛩️ Anime</Link>
         </div>
 
-        {/* Akses Cepat ke Advanced Search */}
         <Link href="/explore" className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900/60 hover:bg-slate-900 text-xs font-bold text-sky-400 hover:text-sky-300 rounded-xl border border-slate-800/80 hover:border-sky-500/30 transition shadow-md w-full sm:w-auto">
           🔍 Advanced Search Engine
         </Link>
       </div>
 
-      {/* SUB-TITLE DINAMIS KATEGORI */}
-      <div className="mb-6 flex items-center gap-2 select-none">
+      {/* --- BARIS BAR BARU: FILTER NEGARA (Otomatis sembunyi jika di Tab Anime) --- */}
+      {type !== 'anime' && !searchQuery && (
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-3 mb-6 border-b border-slate-900/60 select-none">
+          <span className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-wider shrink-0 mr-1 hidden md:inline">
+            NEGARA:
+          </span>
+          {countries.map((c) => {
+            const isActive = selectedCountry === c.code;
+            return (
+              <Link
+                key={c.code}
+                href={`/?type=${type}${c.code ? `&country=${c.code}` : ''}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition active:scale-95 border ${
+                  isActive
+                    ? 'bg-gradient-to-r from-sky-600 to-blue-600 border-sky-400/40 text-white shadow-md shadow-sky-900/20'
+                    : 'bg-slate-950/80 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+              >
+                {c.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* SUB-TITLE SECTION */}
+      <div className="mb-5 flex items-center gap-2 select-none">
         <span className="w-1.5 h-3.5 bg-sky-500 rounded-sm"></span>
-        <h2 className="text-sm font-mono font-bold uppercase tracking-wider text-slate-300">
-          {searchQuery ? `Hasil Pencarian: "${searchQuery}"` : type === 'movie' ? '🔥 Rilisan Bioskop Terbaru (Now Playing)' : type === 'tv' ? '🔥 TV Series Populer' : '⛩️ Top Anime List'}
+        <h2 className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-slate-300">
+          {getSectionTitle()}
         </h2>
       </div>
-      {/* --- PESAN ERROR JIKA KONTEN KOSONG --- */}
-{mediaItems.length === 0 && (
-  <div className="w-full flex flex-col items-center justify-center py-24 bg-slate-900/30 border border-slate-800/80 rounded-2xl border-dashed">
-    <span className="text-5xl mb-4 animate-bounce">🎬</span>
-    <h3 className="text-lg font-bold text-slate-300 font-mono">Yahh, Tidak Ada Konten Ditemukan.</h3>
-    <p className="text-sm text-slate-500 mt-2 text-center max-w-sm">
-      Coba cari dengan kata kunci lain atau pilih halaman sebelumnya. Pastikan koneksi internet stabil.
-    </p>
-  </div>
-)}
-      {/* --- GRID POSTER MOVIE (RESPONSIVE: 2 MOBILE, 3 TABLET, 4 DESKTOP KE SAMPING) --- */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4 sm:gap-6">
-        {mediaItems.map((item: MediaItem) => {
-          const title = item.title || item.name;
-          const poster = item.poster_path 
-            ? (item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w500${item.poster_path}`)
-            : 'https://via.placeholder.com/500x750?text=No+Poster';
-          
-          const releaseYear = (item.release_date || item.first_air_date || 'N/A').split('-')[0];
-          const itemRoute = type === 'anime' ? `/anime/${item.id}` : type === 'tv' ? `/tv/${item.id}` : `/movie/${item.id}`;
 
-          return (
-            <Link 
-              key={item.id} 
-              href={itemRoute} 
-              className="group bg-slate-900/20 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-sky-500/40 hover:shadow-[0_10px_30px_rgba(14,165,233,0.08)] transition-all duration-300 flex flex-col relative"
-            >
-              {/* Wadah Gambar Poster */}
-              <div className="relative aspect-[2/3] w-full overflow-hidden bg-slate-950">
-                <img 
-                  src={poster} 
-                  alt={title} 
-                  loading="lazy" 
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                />
-                
-                {/* Badge Rating Bintang */}
-                <div className="absolute top-2.5 right-2.5 bg-black/80 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] font-mono font-bold text-amber-400 border border-slate-800/60 shadow">
-                  ★ {item.vote_average?.toFixed(1)}
+      {/* --- AREA HASIL ATAU KOSONG --- */}
+      {mediaItems.length === 0 ? (
+        <div className="w-full flex flex-col items-center justify-center py-24 bg-slate-900/20 border border-slate-800/80 rounded-2xl border-dashed my-6">
+          <span className="text-5xl mb-4 animate-bounce">🎬</span>
+          <h3 className="text-base sm:text-lg font-bold text-slate-300 font-mono">Yahh, Tidak Ada Film Ditemukan.</h3>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 text-center max-w-sm px-4">
+            Coba ganti filter negara di atas atau kembalikan ke &quot;Semua&quot;.
+          </p>
+        </div>
+      ) : (
+        /* --- GRID POSTER COMPACT (3 Mobile, 4 Tablet, 5 Laptop, 6 PC Wide) --- */
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5 sm:gap-4">
+          {mediaItems.map((item: MediaItem) => {
+            const title = item.title || item.name;
+            const poster = item.poster_path 
+              ? (item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w500${item.poster_path}`)
+              : 'https://via.placeholder.com/500x750?text=No+Poster';
+            
+            const releaseYear = (item.release_date || item.first_air_date || 'N/A').split('-')[0];
+            const itemRoute = type === 'anime' ? `/anime/${item.id}` : type === 'tv' ? `/tv/${item.id}` : `/movie/${item.id}`;
+
+            return (
+              <Link 
+                key={item.id} 
+                href={itemRoute} 
+                className="group bg-slate-900/20 border border-slate-800/80 rounded-xl overflow-hidden hover:border-sky-500/50 transition-all duration-300 flex flex-col relative"
+              >
+                <div className="relative aspect-[2/3] w-full overflow-hidden bg-slate-950">
+                  <img src={poster} alt={title} loading="lazy" className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"/>
+                  
+                  <div className="absolute top-1.5 right-1.5 bg-black/80 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-mono font-bold text-amber-400 border border-slate-800">
+                    ★ {item.vote_average?.toFixed(1)}
+                  </div>
+
+                  {type === 'movie' && currentPage === 1 && !selectedCountry && !searchQuery && (
+                    <div className="absolute top-1.5 left-1.5 bg-sky-600 text-white font-mono font-black text-[8px] px-1.5 py-0.5 rounded tracking-wider uppercase">
+                      NEW
+                    </div>
+                  )}
                 </div>
 
-                {/* Badge Penanda Rilisan Baru khusus untuk jenis Movie di halaman pertama */}
-                {type === 'movie' && currentPage === 1 && !searchQuery && (
-                  <div className="absolute top-2.5 left-2.5 bg-sky-600/90 text-white font-mono font-black text-[9px] px-2 py-0.5 rounded-md shadow-sm tracking-wider uppercase animate-pulse">
-                    NEW
-                  </div>
-                )}
-              </div>
-
-              {/* Teks Keterangan Bawah */}
-              <div className="p-3.5 flex-1 flex flex-col justify-between gap-1">
-                <h3 className="text-xs font-bold text-slate-200 group-hover:text-sky-400 truncate transition duration-200">
-                  {title}
-                </h3>
-                <span className="text-[10px] font-mono font-semibold text-slate-500 block">
-                  {releaseYear} • {type.toUpperCase()}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* --- INTERAKTIF SMART PAGINASI MENU (NEXT PAGE) --- */}
-      <div className="mt-12 pt-6 border-t border-slate-900 flex items-center justify-center gap-2 font-mono text-xs">
-        
-        {/* Tombol Halaman Sebelumnya (Sembunyikan jika di hal 1) */}
-        {currentPage > 1 && (
-          <Link 
-            href={`/?type=${type}${searchQuery ? `&q=${searchQuery}` : ''}&page=${currentPage - 1}`}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 hover:text-white transition active:scale-95 shadow-md font-bold"
-          >
-            ← Prev Page
-          </Link>
-        )}
-
-        {/* Indikator Halaman Aktif */}
-        <div className="px-5 py-2 bg-slate-950 rounded-xl border border-slate-900 font-bold text-slate-400 min-w-[110px] text-center select-none shadow-inner">
-          PAGE <span className="text-sky-400 text-sm font-black">{currentPage}</span>
+                <div className="p-2 sm:p-2.5 flex-1 flex flex-col justify-between gap-0.5">
+                  <h3 className="text-[11px] sm:text-xs font-bold text-slate-200 group-hover:text-sky-400 truncate transition duration-200">
+                    {title}
+                  </h3>
+                  <span className="text-[9px] font-mono font-semibold text-slate-500 block">
+                    {releaseYear}
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
+      )}
 
-        {/* Tombol Halaman Selanjutnya */}
-        {mediaItems.length >= 20 && (
-          <Link 
-            href={`/?type=${type}${searchQuery ? `&q=${searchQuery}` : ''}&page=${currentPage + 1}`}
-            className="px-4 py-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl shadow-md shadow-sky-500/10 transition active:scale-95 font-bold"
-          >
-            Next Page →
-          </Link>
-        )}
+      {/* --- SMART PAGINASI MENU (KONSISTEN MEMBAWA FILTER NEGARA) --- */}
+      {mediaItems.length > 0 && (
+        <div className="mt-10 pt-6 border-t border-slate-900 flex items-center justify-center gap-2 font-mono text-xs">
+          {currentPage > 1 && (
+            <Link 
+              href={`/?type=${type}${selectedCountry ? `&country=${selectedCountry}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}&page=${currentPage - 1}`}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 hover:text-white transition font-bold"
+            >
+              ← Prev
+            </Link>
+          )}
 
-      </div>
+          <div className="px-4 py-2 bg-slate-950 rounded-xl border border-slate-900 font-bold text-slate-400 text-center select-none shadow-inner">
+            HAL <span className="text-sky-400 text-sm font-black">{currentPage}</span>
+          </div>
+
+          {mediaItems.length >= 18 && (
+            <Link 
+              href={`/?type=${type}${selectedCountry ? `&country=${selectedCountry}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}&page=${currentPage + 1}`}
+              className="px-4 py-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl shadow-md transition font-bold"
+            >
+              Next →
+            </Link>
+          )}
+        </div>
+      )}
 
     </div>
   );

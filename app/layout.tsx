@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css'; // Pastikan path css bawaanmu ini benar
+import HistatsTracker from '@/components/HistatsTracker'; // <--- [BARU] Import komponen Histats kamu
 
 // Failsafe Domain agar bekerja di localhost maupun saat Live di Vercel
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://moviekuy.sociosquad.net';
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
     siteName: 'MovieKuy',
     images: [
       {
-        url: '/opengraph-image.png', // Akan otomatis diterjemahkan jadi: https://moviekuy.../opengraph-image.png
+        url: '/opengraph-image.png',
         width: 1200,
         height: 630,
         alt: 'MovieKuy Cinema Banner',
@@ -57,6 +58,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="flex-grow">
           {children}
         </div>
+
+        {/* --- [BARU] MESIN PELACAK HISTATS BERJALAN DI SINI --- */}
+        <HistatsTracker />
 
         {/* Global Footer (Meresap otomatis ke seluruh halaman) */}
         <footer className="w-full bg-slate-950 border-t border-slate-900/80 py-8 px-4 text-center mt-auto z-10">
