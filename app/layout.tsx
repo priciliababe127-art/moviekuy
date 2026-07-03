@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css'; // Pastikan path css bawaanmu ini benar
 import HistatsTracker from '@/components/HistatsTracker'; // <--- [BARU] Import komponen Histats kamu
+import AdManager from '@/components/admanager'; // <--- [1] IMPORT IKLANMU DI SINI
 
 // Failsafe Domain agar bekerja di localhost maupun saat Live di Vercel
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://moviekuy.sociosquad.net';
@@ -49,7 +50,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="preconnect" href="https://cdn.myanimelist.net" />
         <link rel="dns-prefetch" href="https://vidlink.pro" />
-        <meta name="monetag" content="8af0094dff4adbe12d7afd394a5f8a53">
       </head>
       
       {/* Menggunakan teknik Sticky Footer (flex-col min-h-screen) */}
@@ -62,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* --- [BARU] MESIN PELACAK HISTATS BERJALAN DI SINI --- */}
         <HistatsTracker />
+        <AdManager /> {/* <--- [2] PASANG DI SINI */}
 
         {/* Global Footer (Meresap otomatis ke seluruh halaman) */}
         <footer className="w-full bg-slate-950 border-t border-slate-900/80 py-8 px-4 text-center mt-auto z-10">
