@@ -14,22 +14,28 @@ export interface MediaItem {
   vote_average: number;
 }
 
-interface FetchParams {
+// [1. PERBAIKAN ERROR] Ditambahkan properti 'sort' di dalam interface ini
+export interface FetchParams {
   query?: string;
   category?: string;
   year?: string;
   country?: string;
   type?: 'movie' | 'tv' | 'anime';
   page?: number;
+  sort?: string; // <--- INI SOLUSI ERROR YANG MEMBUAT PAGE.TSX LOLOS BUILD!
 }
 
 // 1. MESIN UTAMA BERANDA
 export async function getMedia(params: FetchParams = {}): Promise<MediaItem[]> {
-  const { query, category, year, country, type = 'movie', page = 1 } = params;
+  const { query, category, year, country, type = 'movie', page = 1, sort = 'popular' } = params;
 
   try {
+    // --- JALUR KHUSUS ANIME (JIKAN API) ---
     if (type === 'anime') {
-      let jikanUrl = `https://api.jikan.moe/v4/top/anime?filter=bypopularity&page=${page}`;
+      // Jika filter 'new', tampilkan anime yang sedang tayang musim ini (airing)
+      const jikanFilter = sort === 'new' ? 'airing' : 'bypopularity';
+      let jikanUrl = `https://api.jikan.moe/v4/top/anime?filter=${jikanFilter}&page=${page}`;
+      
       if (query && query.trim() !== '') {
         jikanUrl = `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&sfw=true&page=${page}`;
       }
@@ -49,19 +55,35 @@ export async function getMedia(params: FetchParams = {}): Promise<MediaItem[]> {
       }));
     }
 
-    const defaultCategory = type === 'movie' ? 'now_playing' : 'popular';
-    let apiCategory = category || defaultCategory;
-    if (type === 'tv' && apiCategory === 'now_playing') apiCategory = 'on_the_air';
+    // --- JALUR TMDB (MOVIES & TV SERIES) ---
+    let url = '';
 
-    let url = `${BASE_URL}/${type}/${apiCategory}?api_key=${API_KEY}&language=id-ID&page=${page}`;
-
+    // A. Jika sedang mencari judul spesifik lewat Search Bar
     if (query && query.trim() !== '') {
       url = `${BASE_URL}/search/${type}?api_key=${API_KEY}&language=id-ID&query=${encodeURIComponent(query)}&page=${page}`;
-    } else if (year || country) {
+    } 
+    // B. Jika ada filter Urutan (New Release), Tahun, atau Negara -> Gunakan endpoint Discover
+    else if (sort === 'new' || year || country) {
       const q = new URLSearchParams({ api_key: API_KEY, language: 'id-ID', page: page.toString() });
+      
       if (year) q.append(type === 'movie' ? 'primary_release_year' : 'first_air_date_year', year);
       if (country) q.append('with_origin_country', country);
+      
+      // Aturan urutan: Terpopuler vs Tanggal Rilis Terbaru
+      const sortBy = sort === 'new' 
+        ? (type === 'movie' ? 'primary_release_date.desc' : 'first_air_date.desc')
+        : 'popularity.desc';
+      q.append('sort_by', sortBy);
+
       url = `${BASE_URL}/discover/${type}?${q.toString()}`;
+    } 
+    // C. Default fallback ke endpoint kategori standar
+    else {
+      const defaultCategory = type === 'movie' ? 'now_playing' : 'popular';
+      let apiCategory = category || defaultCategory;
+      if (type === 'tv' && apiCategory === 'now_playing') apiCategory = 'on_the_air';
+
+      url = `${BASE_URL}/${type}/${apiCategory}?api_key=${API_KEY}&language=id-ID&page=${page}`;
     }
 
     const res = await fetch(url, { next: { revalidate: 60 } });
