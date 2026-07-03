@@ -49,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="preconnect" href="https://cdn.myanimelist.net" />
         <link rel="dns-prefetch" href="https://vidlink.pro" />
+        <meta name="monetag" content="8af0094dff4adbe12d7afd394a5f8a53">
       </head>
       
       {/* Menggunakan teknik Sticky Footer (flex-col min-h-screen) */}
