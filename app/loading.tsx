@@ -6,7 +6,7 @@ export default function Loading() {
         <div className="absolute inset-0 rounded-full border-4 border-sky-500 border-t-transparent animate-spin"></div>
       </div>
       <span className="text-xs font-mono font-bold tracking-widest text-sky-400 animate-pulse uppercase">
-        Memuat Konten...
+        Loading...
       </span>
     </div>
   );

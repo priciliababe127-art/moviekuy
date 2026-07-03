@@ -22,9 +22,20 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
   return (
     <div className="min-h-screen bg-[#070b14] text-white p-4 sm:p-8 max-w-7xl mx-auto pb-24">
       
-      <div className="border-b border-slate-800 pb-6 mb-8">
-        <h1 className="text-2xl sm:text-4xl font-black tracking-wide font-mono">🔍 ADVANCED EXPLORE</h1>
-        <p className="text-slate-400 text-xs sm:text-sm mt-1">Filter ribuan database film dan serial TV secara spesifik.</p>
+      {/* --- HEADER DENGAN TOMBOL KEMBALI --- */}
+      <div className="border-b border-slate-800 pb-6 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-4xl font-black tracking-wide font-mono">🔍 ADVANCED EXPLORE</h1>
+          <p className="text-slate-400 text-xs sm:text-sm mt-1">Filter ribuan database film dan serial TV secara spesifik.</p>
+        </div>
+
+        {/* Tombol Kembali ke Beranda */}
+        <Link 
+          href="/" 
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900/80 hover:bg-slate-800 text-xs font-mono font-bold text-slate-300 hover:text-white rounded-xl border border-slate-800 hover:border-slate-700 transition shadow-sm shrink-0 w-fit group"
+        >
+          <span className="group-hover:-translate-x-1 transition-transform duration-200">←</span> Kembali ke Beranda
+        </Link>
       </div>
 
       {/* --- FORM FILTER UTAMA --- */}
