@@ -39,8 +39,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
   const years = ['', '2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018'];
 
   const languages = [
-    { code: 'en-US', label: '🇬🇧 English (Default)' },
-    { code: 'id-ID', label: '🇮🇩 Indonesia' },
+    { code: 'en-US', label: '🇬🇧 EN' },
+    { code: 'id-ID', label: '🇮🇩 ID' },
   ];
 
   // Helper Pintar untuk Menjaga Sinkronisasi Parameter URL Saat Klik Filter
@@ -91,6 +91,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
       
       {/* --- PREMIUM NAVBAR HEADER --- */}
       <header className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-900 pb-6 mb-8">
+        
+        {/* Logo Kiri */}
         <Link href="/" className="flex items-center gap-2.5 group shrink-0 select-none">
           <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800/80 flex items-center justify-center shadow-[0_0_20px_rgba(56,189,248,0.15)] group-hover:border-sky-500/50 group-hover:scale-105 transition duration-300">
             <svg className="w-6 h-6 transform transition duration-500 group-hover:rotate-3" viewBox="0 0 512 512" fill="none">
@@ -112,21 +114,45 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
           </div>
         </Link>
 
-        {/* Search Bar Baris Atas */}
-        <form action="/" method="GET" className="w-full sm:w-80 relative">
-          <input type="hidden" name="type" value={type} />
-          {selectedCountry && <input type="hidden" name="country" value={selectedCountry} />}
-          {selectedSort && <input type="hidden" name="sort" value={selectedSort} />}
-          {selectedYear && <input type="hidden" name="year" value={selectedYear} />}
-          {selectedLang !== 'en-US' && <input type="hidden" name="lang" value={selectedLang} />}
-          <input 
-            type="text" 
-            name="q" 
-            defaultValue={searchQuery}
-            placeholder={`Search ${type === 'movie' ? 'movies' : type === 'tv' ? 'series' : 'anime'}...`}
-            className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500/60 rounded-xl px-4 py-2.5 text-xs font-semibold placeholder-slate-600 outline-none transition text-slate-200"
-          />
-        </form>
+        {/* --- [POJOK KANAN ATAS] SWITCHER BAHASA + SEARCH BAR --- */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+          
+          {/* Tombol Pemilih Bahasa (Pojok Kanan Atas) */}
+          <div className="flex items-center bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 shrink-0 select-none shadow-sm">
+            {languages.map((l) => (
+              <Link
+                key={l.code}
+                href={buildUrl({ lang: l.code, page: '1' })}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1 ${
+                  selectedLang === l.code
+                    ? 'bg-sky-600 text-white shadow-md shadow-sky-900/40'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                }`}
+                title={l.code === 'en-US' ? 'Switch to English' : 'Ganti ke Bahasa Indonesia'}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Search Bar */}
+          <form action="/" method="GET" className="w-full sm:w-64 md:w-72 relative">
+            <input type="hidden" name="type" value={type} />
+            {selectedCountry && <input type="hidden" name="country" value={selectedCountry} />}
+            {selectedSort && <input type="hidden" name="sort" value={selectedSort} />}
+            {selectedYear && <input type="hidden" name="year" value={selectedYear} />}
+            {selectedLang !== 'en-US' && <input type="hidden" name="lang" value={selectedLang} />}
+            <input 
+              type="text" 
+              name="q" 
+              defaultValue={searchQuery}
+              placeholder={`Search ${type === 'movie' ? 'movies' : type === 'tv' ? 'series' : 'anime'}...`}
+              className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500/60 rounded-xl px-4 py-2.5 text-xs font-semibold placeholder-slate-600 outline-none transition text-slate-200"
+            />
+          </form>
+
+        </div>
+
       </header>
 
       {/* --- KONTROL TAB & ADVANCED SEARCH --- */}
@@ -142,58 +168,35 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
         </Link>
       </div>
 
-      {/* --- FILTER KOMPREHENSIF (URUTAN, TAHUN, NEGARA, BAHASA) --- */}
+      {/* --- FILTER KOMPREHENSIF (URUTAN, TAHUN, NEGARA) --- */}
       {type !== 'anime' && !searchQuery && (
         <div className="flex flex-col gap-3 mb-6 bg-slate-900/30 p-3.5 rounded-2xl border border-slate-800/80 select-none">
           
-          {/* Baris 1: Urutan & Pilihan Bahasa */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/60 pb-3">
-            
-            {/* Filter Urutan */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-              <span className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider shrink-0 mr-1">
-                SORT BY:
-              </span>
-              <Link
-                href={buildUrl({ sort: 'popular', page: '1' })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition ${
-                  selectedSort === 'popular'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                    : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                }`}
-              >
-                🔥 Popular
-              </Link>
-              <Link
-                href={buildUrl({ sort: 'new', page: '1' })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition ${
-                  selectedSort === 'new'
-                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
+          {/* Baris 1: Filter Urutan (Tanpa pengubah bahasa karena sudah pindah ke atas) */}
+          <div className="flex items-center gap-2 border-b border-slate-800/60 pb-3 overflow-x-auto no-scrollbar">
+            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider shrink-0 mr-1">
+              SORT BY:
+            </span>
+            <Link
+              href={buildUrl({ sort: 'popular', page: '1' })}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition ${
+                selectedSort === 'popular'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
                   : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                }`}
-              >
-                ✨ New Release
-              </Link>
-            </div>
-
-            {/* Filter Bahasa */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] font-mono text-slate-500 font-bold uppercase mr-1">LANG:</span>
-              {languages.map((l) => (
-                <Link
-                  key={l.code}
-                  href={buildUrl({ lang: l.code, page: '1' })}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition border ${
-                    selectedLang === l.code
-                      ? 'bg-slate-800 border-sky-500 text-white shadow-sm'
-                      : 'bg-slate-950 border-slate-900 text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-
+              }`}
+            >
+              🔥 Popular
+            </Link>
+            <Link
+              href={buildUrl({ sort: 'new', page: '1' })}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition ${
+                selectedSort === 'new'
+                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
+                : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+              }`}
+            >
+              ✨ New Release
+            </Link>
           </div>
 
           {/* Baris 2: Filter Tahun */}
