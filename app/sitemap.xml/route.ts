@@ -3,13 +3,23 @@ import { getMedia } from '@/lib/tmdb';
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://moviekuy.sociosquad.net';
 
-  // 1. KEPALA XML SUPER KAKU (Inilah mantra gaib yang dituntut Yandex di Line 2 Column 61)
+  // --- HELPER UNTUK MEMBUAT SLUG (Contoh: "The Flash" -> "the-flash") ---
+  const slugify = (text: string) => {
+    return (text || 'item')
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-') // Ganti karakter non-alfanumerik dengan dash
+      .replace(/(^-|-$)+/g, '');   // Hapus dash di awal/akhir
+  };
+
+  // 1. KEPALA XML SUPER KAKU (Inilah mantra gaib yang dituntut Yandex)
   const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" 
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">`;
 
-  // Helper format tanggal murni YYYY-MM-DD (Yandex sangat membenci format jam bertanda milidetik)
+  // Helper format tanggal murni YYYY-MM-DD
   const cleanDate = (dateStr?: string) => {
     if (!dateStr || dateStr === 'N/A') return new Date().toISOString().split('T')[0];
     const d = new Date(dateStr);
@@ -41,9 +51,10 @@ export async function GET() {
     ]);
 
     (movies || []).forEach((m) => {
+      const slug = slugify(m.title || 'movie');
       dynamicXml += `
   <url>
-    <loc>${baseUrl}/movie/${m.id}</loc>
+    <loc>${baseUrl}/movie/${m.id}-${slug}</loc>
     <lastmod>${cleanDate(m.release_date)}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -51,9 +62,10 @@ export async function GET() {
     });
 
     (tvShows || []).forEach((t) => {
+      const slug = slugify(t.name || 'series');
       dynamicXml += `
   <url>
-    <loc>${baseUrl}/tv/${t.id}</loc>
+    <loc>${baseUrl}/tv/${t.id}-${slug}</loc>
     <lastmod>${cleanDate(t.first_air_date)}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -61,9 +73,10 @@ export async function GET() {
     });
 
     (animes || []).forEach((a) => {
+      const slug = slugify(a.title || 'anime');
       dynamicXml += `
   <url>
-    <loc>${baseUrl}/anime/${a.id}</loc>
+    <loc>${baseUrl}/anime/${a.id}-${slug}</loc>
     <lastmod>${cleanDate(a.first_air_date)}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -78,7 +91,6 @@ export async function GET() {
   const finalXml = `${xmlHeader}${staticXml}${dynamicXml}
 </urlset>`;
 
-  // Kembalikan sebagai wujud file XML murni
   return new Response(finalXml, {
     status: 200,
     headers: {
