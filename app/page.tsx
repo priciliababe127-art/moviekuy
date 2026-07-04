@@ -278,7 +278,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
               : 'https://via.placeholder.com/500x750?text=No+Poster';
             
             const releaseYear = (item.release_date || item.first_air_date || 'N/A').split('-')[0];
-            const itemRoute = type === 'anime' ? `/anime/${item.id}` : type === 'tv' ? `/tv/${item.id}` : `/movie/${item.id}`;
+            
+            // --- [FITUR BARU] PEMBUAT SLUG RAMAH SEO ---
+            const slugTitle = (title || 'video')
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/(^-|-$)+/g, '');
+
+            const itemRoute = type === 'anime' 
+              ? `/anime/${item.id}-${slugTitle}` 
+              : type === 'tv' 
+              ? `/tv/${item.id}-${slugTitle}` 
+              : `/movie/${item.id}-${slugTitle}`;
 
             return (
               <Link 
