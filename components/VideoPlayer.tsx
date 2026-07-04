@@ -85,11 +85,29 @@ export default function VideoPlayer({ tmdbId, title }: { tmdbId: string; title: 
 
           </div>
 
-          {/* Area Iframe 16:9 */}
-          <div className="relative w-full pb-[56.25%] bg-black">
+          {/* Area Iframe 16:9 dengan Watermark Logo */}
+          <div className="relative w-full pb-[56.25%] bg-black group">
+            
+            {/* --- [BARU] WATERMARK LOGO MOVIEKUY DI ATAS TENGAH --- */}
+            {/* pointer-events-none sangat PENTING agar logo tidak memblokir klik penonton ke layar iframe */}
+            <div className="absolute top-3 sm:top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none select-none transition-opacity duration-300 opacity-80 group-hover:opacity-100">
+              <div className="bg-slate-950/75 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-700/60 shadow-lg flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse shadow-[0_0_8px_#38bdf8]"></span>
+                <span className="text-[10px] sm:text-xs font-black tracking-widest text-white font-mono">
+                  MOVIE<span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-blue-500 to-amber-400">KUY</span>
+                </span>
+                <span className="text-[8px] font-mono text-slate-400 border-l border-slate-700 pl-1.5 uppercase hidden sm:inline">
+                  HD Stream
+                </span>
+              </div>
+            </div>
+
+            {/* Spinner Loading Latar Belakang */}
             <div className="absolute inset-0 flex items-center justify-center bg-slate-950 pointer-events-none z-0">
               <div className="w-8 h-8 border-4 border-slate-800 border-t-sky-500 rounded-full animate-spin"></div>
             </div>
+
+            {/* Iframe Pemutar Video */}
             <iframe
               src={providers[selectedServer as keyof typeof providers]}
               className="absolute top-0 left-0 w-full h-full border-0 z-10"
@@ -102,7 +120,7 @@ export default function VideoPlayer({ tmdbId, title }: { tmdbId: string; title: 
 
         </div>
 
-        {/* 2. CINEMA STREAM DASHBOARD BAR (BARU - SELARAS DENGAN NAV BAR TVPLAYER) */}
+        {/* 2. CINEMA STREAM DASHBOARD BAR */}
         <div className={`bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800/80 p-3 sm:p-4 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-lg ${isTheaterMode ? 'border-sky-500/40 shadow-[0_10px_30px_rgba(0,0,0,0.9)]' : ''}`}>
           
           {/* Kiri: Indikator Status & Judul Film */}
