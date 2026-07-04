@@ -14,7 +14,6 @@ export interface MediaItem {
   vote_average: number;
 }
 
-// [1. PERBAIKAN ERROR] Ditambahkan properti 'sort' di dalam interface ini
 export interface FetchParams {
   query?: string;
   category?: string;
@@ -22,12 +21,13 @@ export interface FetchParams {
   country?: string;
   type?: 'movie' | 'tv' | 'anime';
   page?: number;
-  sort?: string; // <--- INI SOLUSI ERROR YANG MEMBUAT PAGE.TSX LOLOS BUILD!
+  sort?: string;
+  language?: string;
 }
 
 // 1. MESIN UTAMA BERANDA
 export async function getMedia(params: FetchParams = {}): Promise<MediaItem[]> {
-  const { query, category, year, country, type = 'movie', page = 1, sort = 'popular' } = params;
+  const { query, category, year, country, type = 'movie', page = 1, sort = 'popular', language = 'en-US' } = params;
 
   try {
     // --- JALUR KHUSUS ANIME (JIKAN API) ---
@@ -60,11 +60,11 @@ export async function getMedia(params: FetchParams = {}): Promise<MediaItem[]> {
 
     // A. Jika sedang mencari judul spesifik lewat Search Bar
     if (query && query.trim() !== '') {
-      url = `${BASE_URL}/search/${type}?api_key=${API_KEY}&language=id-ID&query=${encodeURIComponent(query)}&page=${page}`;
+      url = `${BASE_URL}/search/${type}?api_key=${API_KEY}&language=${language}&query=${encodeURIComponent(query)}&page=${page}`;
     } 
     // B. Jika ada filter Urutan (New Release), Tahun, atau Negara -> Gunakan endpoint Discover
     else if (sort === 'new' || year || country) {
-      const q = new URLSearchParams({ api_key: API_KEY, language: 'id-ID', page: page.toString() });
+      const q = new URLSearchParams({ api_key: API_KEY, language: language, page: page.toString() });
       
       if (year) q.append(type === 'movie' ? 'primary_release_year' : 'first_air_date_year', year);
       if (country) q.append('with_origin_country', country);
@@ -83,7 +83,7 @@ export async function getMedia(params: FetchParams = {}): Promise<MediaItem[]> {
       let apiCategory = category || defaultCategory;
       if (type === 'tv' && apiCategory === 'now_playing') apiCategory = 'on_the_air';
 
-      url = `${BASE_URL}/${type}/${apiCategory}?api_key=${API_KEY}&language=id-ID&page=${page}`;
+      url = `${BASE_URL}/${type}/${apiCategory}?api_key=${API_KEY}&language=${language}&page=${page}`;
     }
 
     const res = await fetch(url, { next: { revalidate: 60 } });
@@ -96,14 +96,15 @@ export async function getMedia(params: FetchParams = {}): Promise<MediaItem[]> {
   }
 }
 
-export async function getMovieDetail(id: string) {
-  const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=id-ID`, { next: { revalidate: 3600 } });
+// Default bahasa untuk halaman detail disamakan ke 'en-US' (Bisa diubah ke 'id-ID' jika dibutuhkan)
+export async function getMovieDetail(id: string, language = 'en-US') {
+  const res = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}&language=${language}`, { next: { revalidate: 3600 } });
   if (!res.ok) return null;
   return res.json();
 }
 
-export async function getTVDetail(id: string) {
-  const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=id-ID`, { next: { revalidate: 3600 } });
+export async function getTVDetail(id: string, language = 'en-US') {
+  const res = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}&language=${language}`, { next: { revalidate: 3600 } });
   if (!res.ok) return null;
   return res.json();
 }
@@ -115,23 +116,23 @@ export async function getAnimeDetail(id: string) {
   return data.data;
 }
 
-export async function getSimilarMovies(id: string) {
-  const res = await fetch(`${BASE_URL}/movie/${id}/similar?api_key=${API_KEY}&language=id-ID&page=1`, { next: { revalidate: 3600 } });
+export async function getSimilarMovies(id: string, language = 'en-US') {
+  const res = await fetch(`${BASE_URL}/movie/${id}/similar?api_key=${API_KEY}&language=${language}&page=1`, { next: { revalidate: 3600 } });
   if (!res.ok) return [];
   const data = await res.json();
   return data.results ? data.results.slice(0, 10) : [];
 }
 
-export async function getGenres(type: 'movie' | 'tv' = 'movie') {
-  const res = await fetch(`${BASE_URL}/genre/${type}/list?api_key=${API_KEY}&language=id-ID`, { next: { revalidate: 86400 } });
+export async function getGenres(type: 'movie' | 'tv' = 'movie', language = 'en-US') {
+  const res = await fetch(`${BASE_URL}/genre/${type}/list?api_key=${API_KEY}&language=${language}`, { next: { revalidate: 86400 } });
   if (!res.ok) return [];
   const data = await res.json();
   return data.genres || [];
 }
 
-export async function getDiscover(params: { type?: string; genre?: string; year?: string; sort?: string; page?: number }) {
-  const { type = 'movie', genre, year, sort = 'popularity.desc', page = 1 } = params;
-  const q = new URLSearchParams({ api_key: API_KEY, language: 'id-ID', page: page.toString(), sort_by: sort });
+export async function getDiscover(params: { type?: string; genre?: string; year?: string; sort?: string; page?: number; language?: string }) {
+  const { type = 'movie', genre, year, sort = 'popularity.desc', page = 1, language = 'en-US' } = params;
+  const q = new URLSearchParams({ api_key: API_KEY, language: language, page: page.toString(), sort_by: sort });
   
   if (genre && genre !== '') q.append('with_genres', genre);
   if (year && year !== '') q.append(type === 'movie' ? 'primary_release_year' : 'first_air_date_year', year);

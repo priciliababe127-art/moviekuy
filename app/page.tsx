@@ -2,7 +2,7 @@ import { getMedia, MediaItem } from '@/lib/tmdb';
 import Link from 'next/link';
 import AdBanner from '@/components/AdBanner'; // <--- [1] IMPORT BANNER IKLAN DI SINI
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ type?: string; page?: string; q?: string; country?: string; sort?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ type?: string; page?: string; q?: string; country?: string; sort?: string; year?: string; lang?: string }> }) {
   const sp = await searchParams;
   
   const typeParam = sp.type;
@@ -10,12 +10,22 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
   const currentPage = parseInt(sp.page || '1', 10);
   const searchQuery = sp.q || '';
   const selectedCountry = sp.country || '';
-  const selectedSort = sp.sort || 'popular'; // <--- Default ke 'popular' jika belum dipilih
+  const selectedSort = sp.sort || 'popular';
+  const selectedYear = sp.year || '';
+  const selectedLang = sp.lang || 'en-US'; // <--- [DEFAULT BAHASA: INGGRIS en-US]
 
-  // Menarik data dengan kombinasi: Tipe + Halaman + Query + Negara + Sort
-  const mediaItems = await getMedia({ type, page: currentPage, query: searchQuery, country: selectedCountry, sort: selectedSort });
+  // Menarik data dengan kombinasi lengkap: Tipe + Halaman + Query + Negara + Sort + Tahun + Bahasa
+  const mediaItems = await getMedia({ 
+    type, 
+    page: currentPage, 
+    query: searchQuery, 
+    country: selectedCountry, 
+    sort: selectedSort,
+    year: selectedYear,
+    language: selectedLang 
+  });
 
-  // Daftar Negara Paling Populer di Dunia Streaming
+  // Daftar Pilihan Filter
   const countries = [
     { code: '', label: '🌍 Semua' },
     { code: 'US', label: '🇺🇸 Barat / US' },
@@ -26,16 +36,53 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
     { code: 'TH', label: '🇹🇭 Thailand' },
   ];
 
+  const years = ['', '2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018'];
+
+  const languages = [
+    { code: 'en-US', label: '🇬🇧 English (Default)' },
+    { code: 'id-ID', label: '🇮🇩 Indonesia' },
+  ];
+
+  // Helper Pintar untuk Menjaga Sinkronisasi Parameter URL Saat Klik Filter
+  const buildUrl = (overrides: Record<string, string | undefined>) => {
+    const params = new URLSearchParams();
+    const t = overrides.type !== undefined ? overrides.type : type;
+    if (t && t !== 'movie') params.set('type', t);
+    
+    const c = overrides.country !== undefined ? overrides.country : selectedCountry;
+    if (c) params.set('country', c);
+    
+    const s = overrides.sort !== undefined ? overrides.sort : selectedSort;
+    if (s && s !== 'popular') params.set('sort', s);
+    
+    const y = overrides.year !== undefined ? overrides.year : selectedYear;
+    if (y) params.set('year', y);
+    
+    const l = overrides.lang !== undefined ? overrides.lang : selectedLang;
+    if (l && l !== 'en-US') params.set('lang', l);
+    
+    const q = overrides.q !== undefined ? overrides.q : searchQuery;
+    if (q) params.set('q', q);
+    
+    const p = overrides.page !== undefined ? overrides.page : currentPage.toString();
+    if (p && p !== '1') params.set('page', p);
+
+    const queryString = params.toString();
+    return `/${queryString ? `?${queryString}` : ''}`;
+  };
+
   // Penentu Judul Sub-Header
   const getSectionTitle = () => {
-    if (searchQuery) return `Hasil Pencarian: "${searchQuery}"`;
-    const sortText = selectedSort === 'new' ? '✨ Rilisan Terbaru' : '🔥 Terpopuler';
+    if (searchQuery) return `Search Results: "${searchQuery}"`;
+    const sortText = selectedSort === 'new' ? '✨ New Releases' : '🔥 Popular';
+    const yearText = selectedYear ? ` (${selectedYear})` : '';
+    
     if (selectedCountry) {
       const cName = countries.find(c => c.code === selectedCountry)?.label || selectedCountry;
-      return `${sortText} (${cName})`;
+      return `${sortText}${yearText} — ${cName}`;
     }
-    if (type === 'movie') return `${sortText} — Film Bioskop`;
-    if (type === 'tv') return `${sortText} — TV Series`;
+    if (type === 'movie') return `${sortText}${yearText} — Movies`;
+    if (type === 'tv') return `${sortText}${yearText} — TV Series`;
     return '⛩️ Top Anime List';
   };
 
@@ -70,11 +117,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
           <input type="hidden" name="type" value={type} />
           {selectedCountry && <input type="hidden" name="country" value={selectedCountry} />}
           {selectedSort && <input type="hidden" name="sort" value={selectedSort} />}
+          {selectedYear && <input type="hidden" name="year" value={selectedYear} />}
+          {selectedLang !== 'en-US' && <input type="hidden" name="lang" value={selectedLang} />}
           <input 
             type="text" 
             name="q" 
             defaultValue={searchQuery}
-            placeholder={`Cari ${type === 'movie' ? 'film' : type === 'tv' ? 'series' : 'anime'}...`}
+            placeholder={`Search ${type === 'movie' ? 'movies' : type === 'tv' ? 'series' : 'anime'}...`}
             className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500/60 rounded-xl px-4 py-2.5 text-xs font-semibold placeholder-slate-600 outline-none transition text-slate-200"
           />
         </form>
@@ -83,9 +132,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
       {/* --- KONTROL TAB & ADVANCED SEARCH --- */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
         <div className="flex bg-slate-950/60 p-1 rounded-2xl border border-slate-800 shadow-xl overflow-x-auto no-scrollbar w-fit">
-          <Link href={`/?type=movie`} className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 ${type === 'movie' ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎬 Movies</Link>
-          <Link href={`/?type=tv`} className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 ${type === 'tv' ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>📺 TV Series</Link>
-          <Link href={`/?type=anime`} className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 ${type === 'anime' ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>⛩️ Anime</Link>
+          <Link href={buildUrl({ type: 'movie', page: '1' })} className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 ${type === 'movie' ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎬 Movies</Link>
+          <Link href={buildUrl({ type: 'tv', page: '1' })} className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 ${type === 'tv' ? 'bg-sky-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>📺 TV Series</Link>
+          <Link href={buildUrl({ type: 'anime', page: '1' })} className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition shrink-0 ${type === 'anime' ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>⛩️ Anime</Link>
         </div>
 
         <Link href="/explore" className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900/60 hover:bg-slate-900 text-xs font-bold text-sky-400 hover:text-sky-300 rounded-xl border border-slate-800/80 hover:border-sky-500/30 transition shadow-md w-full sm:w-auto">
@@ -93,48 +142,94 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
         </Link>
       </div>
 
-      {/* --- FILTER KATEGORI URUTAN & NEGARA --- */}
+      {/* --- FILTER KOMPREHENSIF (URUTAN, TAHUN, NEGARA, BAHASA) --- */}
       {type !== 'anime' && !searchQuery && (
         <div className="flex flex-col gap-3 mb-6 bg-slate-900/30 p-3.5 rounded-2xl border border-slate-800/80 select-none">
           
-          {/* 1. Filter Urutan (Popular vs New Release) */}
-          <div className="flex items-center gap-2 border-b border-slate-800/60 pb-3 overflow-x-auto no-scrollbar">
-            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider shrink-0 mr-1">
-              URUTKAN:
-            </span>
-            <Link
-              href={`/?type=${type}${selectedCountry ? `&country=${selectedCountry}` : ''}&sort=popular`}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition ${
-                selectedSort === 'popular'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+          {/* Baris 1: Urutan & Pilihan Bahasa */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/60 pb-3">
+            
+            {/* Filter Urutan */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              <span className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider shrink-0 mr-1">
+                SORT BY:
+              </span>
+              <Link
+                href={buildUrl({ sort: 'popular', page: '1' })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition ${
+                  selectedSort === 'popular'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                    : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                🔥 Popular
+              </Link>
+              <Link
+                href={buildUrl({ sort: 'new', page: '1' })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition ${
+                  selectedSort === 'new'
+                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
                   : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-              }`}
-            >
-              🔥 Terpopuler (Popular)
-            </Link>
-            <Link
-              href={`/?type=${type}${selectedCountry ? `&country=${selectedCountry}` : ''}&sort=new`}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition ${
-                selectedSort === 'new'
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
-                  : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-              }`}
-            >
-              ✨ Rilisan Baru (New Release)
-            </Link>
+                }`}
+              >
+                ✨ New Release
+              </Link>
+            </div>
+
+            {/* Filter Bahasa */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-mono text-slate-500 font-bold uppercase mr-1">LANG:</span>
+              {languages.map((l) => (
+                <Link
+                  key={l.code}
+                  href={buildUrl({ lang: l.code, page: '1' })}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition border ${
+                    selectedLang === l.code
+                      ? 'bg-slate-800 border-sky-500 text-white shadow-sm'
+                      : 'bg-slate-950 border-slate-900 text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+
           </div>
 
-          {/* 2. Filter Negara */}
+          {/* Baris 2: Filter Tahun */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar border-b border-slate-800/60 pb-3">
+            <span className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-wider shrink-0 mr-1 hidden md:inline">
+              YEAR:
+            </span>
+            {years.map((y) => {
+              const isActive = selectedYear === y;
+              return (
+                <Link
+                  key={y || 'all'}
+                  href={buildUrl({ year: y, page: '1' })}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold shrink-0 transition border ${
+                    isActive
+                      ? 'bg-sky-600/30 border-sky-400 text-white shadow-sm'
+                      : 'bg-slate-950/80 border-slate-800/80 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {y === '' ? '📅 All Years' : y}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Baris 3: Filter Negara */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
             <span className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-wider shrink-0 mr-1 hidden md:inline">
-              NEGARA:
+              COUNTRY:
             </span>
             {countries.map((c) => {
               const isActive = selectedCountry === c.code;
               return (
                 <Link
                   key={c.code}
-                  href={`/?type=${type}${c.code ? `&country=${c.code}` : ''}&sort=${selectedSort}`}
+                  href={buildUrl({ country: c.code, page: '1' })}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 transition active:scale-95 border ${
                     isActive
                       ? 'bg-gradient-to-r from-sky-600 to-blue-600 border-sky-400/40 text-white shadow-md shadow-sky-900/20'
@@ -150,7 +245,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
         </div>
       )}
 
-      {/* --- [2] AREA IKLAN BANNER ADSTERRA (MUNCUL DI HALAMAN UTAMA) --- */}
+      {/* --- AREA IKLAN BANNER ADSTERRA --- */}
       <AdBanner />
 
       {/* SUB-TITLE SECTION */}
@@ -165,9 +260,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
       {mediaItems.length === 0 ? (
         <div className="w-full flex flex-col items-center justify-center py-24 bg-slate-900/20 border border-slate-800/80 rounded-2xl border-dashed my-6">
           <span className="text-5xl mb-4 animate-bounce">🎬</span>
-          <h3 className="text-base sm:text-lg font-bold text-slate-300 font-mono">Yahh, Tidak Ada Film Ditemukan.</h3>
+          <h3 className="text-base sm:text-lg font-bold text-slate-300 font-mono">No Media Found.</h3>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 text-center max-w-sm px-4">
-            Coba ganti kombinasi urutan atau filter negara di atas.
+            Try resetting some filters or selecting &quot;All Years&quot;.
           </p>
         </div>
       ) : (
@@ -221,7 +316,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
         <div className="mt-10 pt-6 border-t border-slate-900 flex items-center justify-center gap-2 font-mono text-xs">
           {currentPage > 1 && (
             <Link 
-              href={`/?type=${type}${selectedCountry ? `&country=${selectedCountry}` : ''}&sort=${selectedSort}${searchQuery ? `&q=${searchQuery}` : ''}&page=${currentPage - 1}`}
+              href={buildUrl({ page: (currentPage - 1).toString() })}
               className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 hover:text-white transition font-bold"
             >
               ← Prev
@@ -229,12 +324,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
           )}
 
           <div className="px-4 py-2 bg-slate-950 rounded-xl border border-slate-900 font-bold text-slate-400 text-center select-none shadow-inner">
-            HAL <span className="text-sky-400 text-sm font-black">{currentPage}</span>
+            PAGE <span className="text-sky-400 text-sm font-black">{currentPage}</span>
           </div>
 
           {mediaItems.length >= 18 && (
             <Link 
-              href={`/?type=${type}${selectedCountry ? `&country=${selectedCountry}` : ''}&sort=${selectedSort}${searchQuery ? `&q=${searchQuery}` : ''}&page=${currentPage + 1}`}
+              href={buildUrl({ page: (currentPage + 1).toString() })}
               className="px-4 py-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl shadow-md transition font-bold"
             >
               Next →

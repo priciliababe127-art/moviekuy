@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import './globals.css'; // Pastikan path css bawaanmu ini benar
-import HistatsTracker from '@/components/HistatsTracker'; // <--- [BARU] Import komponen Histats kamu
-// Failsafe Domain agar bekerja di localhost maupun saat Live di Vercel
+import Script from 'next/script'; // <--- [1] IMPORT KOMPONEN SAKTI NEXT/SCRIPT
+import './globals.css';
+import HistatsTracker from '@/components/HistatsTracker';
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://moviekuy.sociosquad.net';
 
 export const metadata: Metadata = {
@@ -15,8 +16,6 @@ export const metadata: Metadata = {
   keywords: ['nonton film gratis', 'streaming anime sub indo', 'lk21 terbaru', 'rebahin', 'moviekuy'],
   authors: [{ name: 'MovieKuy Network' }],
   creator: 'MovieKuy',
-
-  // --- MESIN PENYELAMAT FACEBOOK, TWITTER, WA ---
   openGraph: {
     type: 'website',
     locale: 'id_ID',
@@ -24,14 +23,7 @@ export const metadata: Metadata = {
     title: 'MovieKuy — Nonton Film & Anime Sub Indo Gratis',
     description: 'Streaming film Hollywood terbaru, Drakor, hingga Anime Jepang kualitas HD 1080p gratis tanpa pop-up iklan.',
     siteName: 'MovieKuy',
-    images: [
-      {
-        url: '/opengraph-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'MovieKuy Cinema Banner',
-      },
-    ],
+    images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'MovieKuy Cinema Banner' }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -48,9 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="preconnect" href="https://cdn.myanimelist.net" />
         <link rel="dns-prefetch" href="https://vidlink.pro" />
-
-        {/* --- PANGGIL FILE IKLAN STATIS (100% AMAN DARI ERROR KOMPILER JSX) --- */}
-        <script src="/admanager.js" data-cfasync="false" async></script>
+        <link rel="dns-prefetch" href="https://js.wpadmngr.com" /> {/* <--- Pre-fetch domain iklan */}
       </head>
       
       <body className="bg-[#070b14] text-slate-100 antialiased selection:bg-sky-500 selection:text-white flex flex-col min-h-screen">
@@ -60,12 +50,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </div>
 
-        {/* --- MESIN PELACAK HISTATS TETAP BERJALAN DI SINI --- */}
+        {/* --- PELACAK STATISTIK --- */}
         <HistatsTracker />
+
+        {/* --- [2] INTEGRASI IKLAN POPUNDER SECARA SEMPURNA --- */}
+        <Script 
+          src="/admanager.js" 
+          strategy="afterInteractive" 
+          data-cfasync="false" 
+        />
 
         {/* Global Footer */}
         <footer className="w-full bg-slate-950 border-t border-slate-900/80 py-8 px-4 text-center mt-auto z-10">
-          {/* ... isi footer ... */}
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+              <span className="font-bold text-slate-300 tracking-wider">MOVIEKUY NETWORK</span>
+            </div>
+            <div className="flex gap-6">
+              <Link href="/explore" className="hover:text-sky-400 transition">Advanced Search</Link>
+              <Link href="/dmca" className="hover:text-sky-400 transition underline decoration-slate-800">DMCA Privacy</Link>
+            </div>
+            <p>© {new Date().getFullYear()} MovieKuy. All rights reserved.</p>
+          </div>
         </footer>
 
       </body>
