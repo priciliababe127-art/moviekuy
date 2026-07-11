@@ -88,7 +88,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ t
 
   return (
     <div className="min-h-screen bg-[#070b14] text-white p-4 sm:p-6 md:p-8 max-w-7xl mx-auto pb-24">
-      
+      {/* --- [SEO] H1 RAHASIA KHUSUS MESIN PENCARI (BING & GOOGLE) --- */}
+    <h1 className="sr-only">
+      MovieKuy — Streaming Film HD, Serial TV, dan Anime Subtitle Indonesia Gratis
+    </h1>
       {/* --- PREMIUM NAVBAR HEADER --- */}
       <header className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-900 pb-6 mb-8">
         
