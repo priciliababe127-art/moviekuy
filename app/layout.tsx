@@ -41,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://cdn.myanimelist.net" />
         <link rel="dns-prefetch" href="https://vidlink.pro" />
         <link rel="dns-prefetch" href="https://js.wpadmngr.com" /> {/* <--- Pre-fetch domain iklan */}
+        <script src="https://quge5.com/88/tag.min.js" data-zone="258579" async data-cfasync="false"></script>
       </head>
       
       <body className="bg-[#070b14] text-slate-100 antialiased selection:bg-sky-500 selection:text-white flex flex-col min-h-screen">
