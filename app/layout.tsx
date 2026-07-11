@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Script from 'next/script'; // <--- [1] IMPORT KOMPONEN SAKTI NEXT/SCRIPT
+import Script from 'next/script'; // [1] IMPORT KOMPONEN SAKTI NEXT/SCRIPT
 import './globals.css';
 import HistatsTracker from '@/components/HistatsTracker';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://moviekuy.sociosquad.net';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sociosquad.net';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -16,6 +16,16 @@ export const metadata: Metadata = {
   keywords: ['nonton film gratis', 'streaming anime sub indo', 'lk21 terbaru', 'rebahin', 'moviekuy'],
   authors: [{ name: 'MovieKuy Network' }],
   creator: 'MovieKuy',
+
+  // --- [BARU] INTEGRASI VERIFIKASI GOOGLE, YANDEX & BING ---
+  verification: {
+    google: 'KODE_VERIFIKASI_GOOGLE_KAMU', // Ganti dengan string dari Google Search Console
+    yandex: '31330415d6209dfb',            // Kode Yandex milikmu yang sudah aktif
+    other: {
+      'msvalidate.01': 'KODE_VERIFIKASI_BING_KAMU', // Ganti dengan string dari Bing Webmaster Tools
+    },
+  },
+
   openGraph: {
     type: 'website',
     locale: 'id_ID',
@@ -37,15 +47,39 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id">
       <head>
+        {/* --- [1] GOOGLE TAG MANAGER (SCRIPT UTAMA) --- */}
+        <Script
+          id="gtm-script"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','GTM-PDQ74TGP');
+            `,
+          }}
+        />
+
         <link rel="preconnect" href="https://image.tmdb.org" />
         <link rel="preconnect" href="https://cdn.myanimelist.net" />
         <link rel="dns-prefetch" href="https://vidlink.pro" />
-        <link rel="dns-prefetch" href="https://js.wpadmngr.com" /> {/* <--- Pre-fetch domain iklan */}
-        
+        <link rel="dns-prefetch" href="https://js.wpadmngr.com" />
       </head>
       
       <body className="bg-[#070b14] text-slate-100 antialiased selection:bg-sky-500 selection:text-white flex flex-col min-h-screen">
         
+        {/* --- [2] GOOGLE TAG MANAGER (NOSCRIPT / BACKUP IFRAME) --- */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-PDQ74TGP"
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
+
         {/* Area Konten Utama */}
         <div className="flex-grow">
           {children}
@@ -54,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* --- PELACAK STATISTIK --- */}
         <HistatsTracker />
 
-        {/* --- [2] INTEGRASI IKLAN POPUNDER SECARA SEMPURNA --- */}
+        {/* --- INTEGRASI IKLAN POPUNDER --- */}
         <Script 
           src="/admanager.js" 
           strategy="afterInteractive" 
