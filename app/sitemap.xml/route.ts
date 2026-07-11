@@ -1,7 +1,7 @@
 import { getMedia } from '@/lib/tmdb';
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://moviekuy.sociosquad.net';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://sociosquad.net';
 
   // --- HELPER UNTUK MEMBUAT SLUG (Contoh: "The Flash" -> "the-flash") ---
   const slugify = (text: string) => {
