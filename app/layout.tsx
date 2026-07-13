@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   authors: [{ name: 'MovieKuy Network' }],
   creator: 'MovieKuy',
 
+  // --- [BARU] DAFTARKAN FAVICON SECARA EKSPLISIT UNTUK YANDEX & GOOGLE ---
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico', // (Opsional: Jika punya gambar PNG 180x180, ganti jadi '/apple-icon.png')
+  },
+
   // --- [BARU] INTEGRASI VERIFIKASI GOOGLE, YANDEX & BING ---
   verification: {
     google: 'KODE_VERIFIKASI_GOOGLE_KAMU', // Ganti dengan string dari Google Search Console
